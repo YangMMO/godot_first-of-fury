@@ -41,10 +41,10 @@ position = Vector2(49, 44)
 [node name="Barrel" parent="ActorsContainer" instance=ExtResource("4_aqk2v")]
 position = Vector2(76, 46)
 
-[node name="BasicEnemy" parent="." node_paths=PackedStringArray("player") instance=ExtResource("5_036b0")]
+[node name="BasicEnemy" parent="ActorsContainer" node_paths=PackedStringArray("player") instance=ExtResource("5_036b0")]
 position = Vector2(76, 56)
-player = NodePath("../ActorsContainer/Player")
+player = NodePath("../Player")
 
-[node name="BasicEnemy2" parent="." node_paths=PackedStringArray("player") instance=ExtResource("5_036b0")]
+[node name="BasicEnemy2" parent="ActorsContainer" node_paths=PackedStringArray("player") instance=ExtResource("5_036b0")]
 position = Vector2(26, 56)
-player = NodePath("../ActorsContainer/Player")
+player = NodePath("../Player")

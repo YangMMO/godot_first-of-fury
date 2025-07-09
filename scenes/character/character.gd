@@ -3,10 +3,11 @@ extends CharacterBody2D
 
 const GRAVITY := 600.0
 
-@export var damage: int
-@export var health: int
-@export var jump_intensity: int
-@export var speed: float
+@export var damage: int # 伤害值
+@export var jump_intensity: int # 跳跃强度
+@export var knockback_intensity : float
+@export var max_health: int # 最大生命值
+@export var speed: float # 速度
 
 # 加载完成后取得节点
 @onready var animation_player := $AnimationPlayer
@@ -29,6 +30,7 @@ var anim_map := {
 	State.HURT: 'hurt',
 }
 
+var current_health := 0
 var height := 0.0
 var height_speed := 0.0
 var state = State.IDLE # 默认状态
@@ -38,6 +40,7 @@ func _ready() -> void:
 	# 当检测域有碰撞物体进入时，(area_entered)信号通过链接调用一个方法（on_emit_damage）
 	damage_emitter.area_entered.connect(on_emit_damage.bind())
 	damage_receiver.damage_received.connect(on_receive_damage.bind())
+	current_health = max_health # 初始化生命值
 
 # 进程处理阶段
 func _process(delta: float) -> void:
@@ -115,8 +118,13 @@ func on_land_complete() -> void:
 	state = State.IDLE
 
 func on_receive_damage(damage: int, direction: Vector2) -> void:
-	state = State.HURT
-	print(damage)
+	# 当前生命值计算， clamp限制生命值范围
+	current_health = clamp(current_health - damage, 0, max_health)
+	if current_health <= 0:
+		queue_free()
+	else:
+		state = State.HURT
+		velocity = direction * knockback_intensity
 
 # 发射器 发送伤害，damage_receiver为DamageReceiver类，此类下有一个信号(damage_received)，并过此信号发送伤害值息
 func on_emit_damage(damage_receiver: DamageReceiver) -> void:

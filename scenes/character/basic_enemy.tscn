@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://bxjq6cq3a1ss2"]
+[gd_scene load_steps=12 format=3 uid="uid://bxjq6cq3a1ss2"]
 
 [ext_resource type="PackedScene" uid="uid://c5ciasetgeqtu" path="res://scenes/character/character.tscn" id="1_a1sj3"]
 [ext_resource type="Texture2D" uid="uid://d03qi7ch1thty" path="res://assets/art/characters/enemy_punk.png" id="2_dx5s7"]
@@ -59,9 +59,41 @@ tracks/0/keys = {
 "values": [10, 11, 12, 13, 14, 15, 16, 17]
 }
 
+[sub_resource type="Animation" id="Animation_vyv1r"]
+resource_name = "hurt"
+length = 0.3
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CharacterSprite:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [40, 41, 42]
+}
+tracks/1/type = "method"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0.3),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"on_aciton_complete"
+}]
+}
+
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_r8ptc"]
 _data = {
 &"RESET": SubResource("Animation_dx5s7"),
+&"hurt": SubResource("Animation_vyv1r"),
 &"idle": SubResource("Animation_a1sj3"),
 &"walk": SubResource("Animation_r8ptc")
 }
@@ -69,12 +101,17 @@ _data = {
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_dx5s7"]
 size = Vector2(6, 6)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_r8ptc"]
+size = Vector2(10, 10)
+
 [node name="BasicEnemy" instance=ExtResource("1_a1sj3")]
 collision_layer = 4
 collision_mask = 12
 script = ExtResource("2_r8ptc")
 damage = 2
-health = 20
+jump_intensity = 5
+knockback_intensity = 40.0
+max_health = 20
 
 [node name="CharacterSprite" parent="." index="1"]
 texture = ExtResource("2_dx5s7")
@@ -96,6 +133,13 @@ autoplay = "idle"
 [node name="CollisionShape2D" parent="DamageEmitter" index="0"]
 position = Vector2(8, -12)
 shape = SubResource("RectangleShape2D_dx5s7")
+
+[node name="DamageReceiver" parent="." index="5"]
+collision_layer = 32
+
+[node name="CollisionShape2D" parent="DamageReceiver" index="0"]
+position = Vector2(0, -18)
+shape = SubResource("RectangleShape2D_r8ptc")
 
 [editable path="DamageEmitter"]
 [editable path="DamageReceiver"]
