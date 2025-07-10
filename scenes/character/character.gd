@@ -5,7 +5,8 @@ const GRAVITY := 600.0
 
 @export var damage: int # 伤害值
 @export var jump_intensity: int # 跳跃强度
-@export var knockback_intensity : float
+@export var knockback_intensity : float # 击退强度
+@export var knockdown_intensity : float # 击倒强度
 @export var max_health: int # 最大生命值
 @export var speed: float # 速度
 
@@ -16,7 +17,7 @@ const GRAVITY := 600.0
 @onready var damage_receiver := $DamageReceiver
 
 # 定义的状态
-enum State {IDLE, WALK, ATTACK, TAKEOFF, JUMP, LAND, JUMPKICK, HURT}
+enum State {IDLE, WALK, ATTACK, TAKEOFF, JUMP, LAND, JUMPKICK, HURT, FALL, GROUNDED}
 
 # 定义状态所对应动画名称
 var anim_map := {
@@ -28,6 +29,8 @@ var anim_map := {
 	State.LAND: 'land',
 	State.JUMPKICK: 'jumpkick',
 	State.HURT: 'hurt',
+	State.FALL: 'fall',
+	State.GROUNDED: 'grounded',
 }
 
 var current_health := 0
@@ -71,11 +74,14 @@ func handle_animations() -> void:
 
 # 空中时间，计算击退方式
 func handle_air_time(delta: float) -> void:
-	if state == State.JUMP or  state == State.JUMPKICK:
+	if [State.JUMP, State.JUMPKICK, State.FALL].has(state):
 		height += height_speed * delta
 		if height < 0:
 			height = 0
-			state = State.LAND
+			if state == State.FALL:
+				state = State.GROUNDED
+			else:
+				state = State.LAND
 		else:
 			height_speed -= GRAVITY * delta
 
@@ -117,18 +123,24 @@ func on_takeoff_complete() -> void:
 func on_land_complete() -> void:
 	state = State.IDLE
 
-func on_receive_damage(damage: int, direction: Vector2) -> void:
+# 接收到伤害 amount：收到的害值
+func on_receive_damage(amount: int, direction: Vector2, hit_type:DamageReceiver.HitType) -> void:
 	# 当前生命值计算， clamp限制生命值范围
-	current_health = clamp(current_health - damage, 0, max_health)
-	if current_health <= 0:
-		queue_free()
+	current_health = clamp(current_health - amount, 0, max_health)
+	
+	# 击倒判断
+	if current_health == 0 or hit_type == DamageReceiver.HitType.KNOCKDOWN:
+		state = State.FALL
+		height_speed = knockdown_intensity # 击到弹起高度
 	else:
 		state = State.HURT
-		velocity = direction * knockback_intensity
+	velocity = direction * knockback_intensity
 
-# 发射器 发送伤害，damage_receiver为DamageReceiver类，此类下有一个信号(damage_received)，并过此信号发送伤害值息
-func on_emit_damage(damage_receiver: DamageReceiver) -> void:
+# 发射器 发送伤害，receiver为DamageReceiver类，此类下有一个信号(damage_received)，并过此信号发送伤害值息
+func on_emit_damage(receiver: DamageReceiver) -> void:
+	var hit_type := DamageReceiver.HitType.NORMAL
 	# 三目运算，如果接收器器的位置<全局位置，则代表接收器的位置在左侧
-	var direction := Vector2.LEFT if damage_receiver.global_position.x < global_position.x else Vector2.RIGHT
-	damage_receiver.damage_received.emit(damage, direction)
-	print(damage_receiver)
+	var direction := Vector2.LEFT if receiver.global_position.x < global_position.x else Vector2.RIGHT
+	if state == State.JUMPKICK:
+		hit_type = DamageReceiver.HitType.KNOCKDOWN
+	receiver.damage_received.emit(damage, direction, hit_type)
