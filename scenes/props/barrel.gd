@@ -23,7 +23,7 @@ func _process(delta: float) -> void:
 	handle_air_time(delta) # 此处才是真正计算受击行为
 
 # 接收到伤害处理方法，此处不实际处理行为，仅处理变量
-func on_receive_damage(_damage: int, direction: Vector2) -> void:
+func on_receive_damage(_damage: int, direction: Vector2, hit_type:DamageReceiver.HitType) -> void:
 	# 当只有默认态时，才会接收到伤害并处理
 	if state == State.IDLE:
 		sprite.frame = 1 # 变更精灵图

@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://bxjq6cq3a1ss2"]
+[gd_scene load_steps=15 format=3 uid="uid://bxjq6cq3a1ss2"]
 
 [ext_resource type="PackedScene" uid="uid://c5ciasetgeqtu" path="res://scenes/character/character.tscn" id="1_a1sj3"]
 [ext_resource type="Texture2D" uid="uid://d03qi7ch1thty" path="res://assets/art/characters/enemy_punk.png" id="2_dx5s7"]
@@ -21,6 +21,42 @@ tracks/0/keys = {
 "transitions": PackedFloat32Array(1),
 "update": 1,
 "values": [0]
+}
+
+[sub_resource type="Animation" id="Animation_yx180"]
+resource_name = "fall"
+length = 0.1
+loop_mode = 1
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CharacterSprite:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [51]
+}
+
+[sub_resource type="Animation" id="Animation_by7g5"]
+resource_name = "grounded"
+length = 0.1
+loop_mode = 1
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CharacterSprite:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [52]
 }
 
 [sub_resource type="Animation" id="Animation_vyv1r"]
@@ -90,8 +126,8 @@ tracks/0/keys = {
 "values": [10, 11, 12, 13, 14, 15, 16, 17]
 }
 
-[sub_resource type="Animation" id="Animation_yx180"]
-resource_name = "fall"
+[sub_resource type="Animation" id="Animation_3owbw"]
+resource_name = "land"
 length = 0.1
 loop_mode = 1
 step = 0.1
@@ -105,25 +141,21 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [51]
+"values": [70]
 }
-
-[sub_resource type="Animation" id="Animation_by7g5"]
-resource_name = "grounded"
-length = 0.1
-loop_mode = 1
-step = 0.1
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("CharacterSprite:frame")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
+tracks/1/type = "method"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0.1),
 "transitions": PackedFloat32Array(1),
-"update": 1,
-"values": [52]
+"values": [{
+"args": [],
+"method": &"on_land_complete"
+}]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_r8ptc"]
@@ -133,6 +165,7 @@ _data = {
 &"grounded": SubResource("Animation_by7g5"),
 &"hurt": SubResource("Animation_vyv1r"),
 &"idle": SubResource("Animation_a1sj3"),
+&"land": SubResource("Animation_3owbw"),
 &"walk": SubResource("Animation_r8ptc")
 }
 
@@ -147,9 +180,10 @@ collision_layer = 4
 collision_mask = 12
 script = ExtResource("2_r8ptc")
 damage = 2
+duration_grounded = 1.0
 jump_intensity = 5
 knockback_intensity = 40.0
-knockdown_intensity = 30.0
+knockdown_intensity = 70.0
 max_health = 20
 speed = 25.0
 

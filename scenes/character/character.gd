@@ -4,6 +4,7 @@ extends CharacterBody2D
 const GRAVITY := 600.0
 
 @export var damage: int # 伤害值
+@export var duration_grounded: float # 倒地持续时间
 @export var jump_intensity: int # 跳跃强度
 @export var knockback_intensity : float # 击退强度
 @export var knockdown_intensity : float # 击倒强度
@@ -13,6 +14,7 @@ const GRAVITY := 600.0
 # 加载完成后取得节点
 @onready var animation_player := $AnimationPlayer
 @onready var character_sprite := $CharacterSprite
+@onready var collision_shape := $CollisionShape2D 
 @onready var damage_emitter := $DamageEmitter # Area2D，检测区域
 @onready var damage_receiver := $DamageReceiver
 
@@ -37,6 +39,7 @@ var current_health := 0
 var height := 0.0
 var height_speed := 0.0
 var state = State.IDLE # 默认状态
+var time_since_grounded := Time.get_ticks_msec() # 落地时间
 
 # 准备阶段
 func _ready() -> void:
@@ -51,8 +54,10 @@ func _process(delta: float) -> void:
 	handle_movement()
 	handle_animations()
 	handle_air_time(delta)
+	handle_grounded()
 	fiip_sprites()
 	character_sprite.position = Vector2.UP * height
+	collision_shape.disabled = state == State.GROUNDED
 	move_and_slide()
 
 # 移动事件
@@ -67,6 +72,12 @@ func handle_movement() -> void:
 func handle_input() -> void:
 	pass
 
+# 落地事件
+func handle_grounded() -> void:
+	# 是否落地状态，且落地时间大于持续落地时间
+	if state == State.GROUNDED and (Time.get_ticks_msec() - time_since_grounded > duration_grounded):
+		state = State.LAND # 切换回着陆状态
+
 # 动画事件，根据状态动画播放
 func handle_animations() -> void:
 	if animation_player.has_animation(anim_map[state]):
@@ -80,8 +91,10 @@ func handle_air_time(delta: float) -> void:
 			height = 0
 			if state == State.FALL:
 				state = State.GROUNDED
+				time_since_grounded = Time.get_ticks_msec()
 			else:
 				state = State.LAND
+			velocity = Vector2.ZERO
 		else:
 			height_speed -= GRAVITY * delta
 
