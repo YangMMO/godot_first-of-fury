@@ -3,6 +3,7 @@ extends CharacterBody2D
 
 const GRAVITY := 600.0
 
+@export var can_respawn: bool # 角色是否可以重生
 @export var damage: int # 伤害值
 @export var duration_grounded: float # 倒地持续时间
 @export var jump_intensity: int # 跳跃强度

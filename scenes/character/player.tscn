@@ -258,6 +258,7 @@ size = Vector2(8, 8)
 collision_layer = 2
 collision_mask = 9
 script = ExtResource("2_0vjlc")
+can_respawn = true
 damage = 4
 jump_intensity = 120
 max_health = 30
