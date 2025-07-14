@@ -20,10 +20,10 @@ const GRAVITY := 600.0
 @onready var damage_receiver := $DamageReceiver
 
 # 定义的状态
-enum State {IDLE, WALK, ATTACK, TAKEOFF, JUMP, LAND, JUMPKICK, HURT, FALL, GROUNDED}
+enum State {IDLE, WALK, ATTACK, TAKEOFF, JUMP, LAND, JUMPKICK, HURT, FALL, GROUNDED, DEATH}
 
 # 定义状态所对应动画名称
-var anim_map := {
+var anim_map : Dictionary = {
 	State.IDLE: 'idle',
 	State.WALK: 'walk',
 	State.ATTACK: 'punch',
@@ -34,6 +34,7 @@ var anim_map := {
 	State.HURT: 'hurt',
 	State.FALL: 'fall',
 	State.GROUNDED: 'grounded',
+	State.DEATH: 'grounded',
 }
 
 var current_health := 0
@@ -56,6 +57,7 @@ func _process(delta: float) -> void:
 	handle_animations()
 	handle_air_time(delta)
 	handle_grounded()
+	handle_death(delta)
 	fiip_sprites()
 	character_sprite.position = Vector2.UP * height
 	collision_shape.disabled = state == State.GROUNDED
@@ -77,7 +79,18 @@ func handle_input() -> void:
 func handle_grounded() -> void:
 	# 是否落地状态，且落地时间大于持续落地时间
 	if state == State.GROUNDED and (Time.get_ticks_msec() - time_since_grounded > duration_grounded):
-		state = State.LAND # 切换回着陆状态
+		if current_health == 0:
+			state = State.DEATH
+		else:
+			state = State.LAND # 切换回着陆状态
+
+# 死亡事件
+func handle_death(delta) -> void:
+	# 处于死亡状态，且角色不可重生
+	if state == State.DEATH and not can_respawn:
+		modulate.a -= delta / 2.0
+		if modulate.a <= 0:
+			queue_free()
 
 # 动画事件，根据状态动画播放
 func handle_animations() -> void:
@@ -123,6 +136,10 @@ func can_jump() -> bool:
 # 监听状态否可跳跃飞踢
 func can_jumpkick() -> bool:
 	return state == State.JUMP
+
+# 监听状态否可跳跃飞踢
+func can_get_hurt() -> bool:
+	return  
 
 # 行动结束，状态重置
 func on_aciton_complete() -> void:
