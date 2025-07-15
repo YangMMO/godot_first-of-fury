@@ -7,8 +7,8 @@ const GRAVITY := 600.0
 @export var damage: int # 伤害值
 @export var duration_grounded: float # 倒地持续时间
 @export var jump_intensity: int # 跳跃强度
-@export var knockback_intensity : float # 击退强度
-@export var knockdown_intensity : float # 击倒强度
+@export var knockback_intensity : float # 被击退强度
+@export var knockdown_intensity : float # 被击倒强度
 @export var max_health: int # 最大生命值
 @export var speed: float # 速度
 
@@ -22,11 +22,13 @@ const GRAVITY := 600.0
 # 定义的状态
 enum State {IDLE, WALK, ATTACK, TAKEOFF, JUMP, LAND, JUMPKICK, HURT, FALL, GROUNDED, DEATH}
 
+# 攻击状态
+var anim_attcks := ['punch', 'punch_alt', 'kick', 'roundkick']
+
 # 定义状态所对应动画名称
 var anim_map : Dictionary = {
 	State.IDLE: 'idle',
 	State.WALK: 'walk',
-	State.ATTACK: 'punch',
 	State.TAKEOFF: 'takeoff',
 	State.JUMP: 'jump',
 	State.LAND: 'land',
@@ -37,9 +39,11 @@ var anim_map : Dictionary = {
 	State.DEATH: 'grounded',
 }
 
-var current_health := 0
-var height := 0.0
-var height_speed := 0.0
+var attack_combo_index := 0 # 连招索引
+var current_health := 0 # 当前生命值
+var height := 0.0 # 高度
+var height_speed := 0.0 # 高度速度
+var is_last_hit_successful := false # 最后一击是否成功
 var state = State.IDLE # 默认状态
 var time_since_grounded := Time.get_ticks_msec() # 落地时间
 
@@ -80,7 +84,7 @@ func handle_grounded() -> void:
 	# 是否落地状态，且落地时间大于持续落地时间
 	if state == State.GROUNDED and (Time.get_ticks_msec() - time_since_grounded > duration_grounded):
 		if current_health == 0:
-			state = State.DEATH
+			state = State.DEATH  # 切到死亡状态
 		else:
 			state = State.LAND # 切换回着陆状态
 
@@ -94,7 +98,10 @@ func handle_death(delta) -> void:
 
 # 动画事件，根据状态动画播放
 func handle_animations() -> void:
-	if animation_player.has_animation(anim_map[state]):
+	# 是否为攻击状态，否则播放其他动画
+	if state == State.ATTACK:
+		animation_player.play(anim_attcks[attack_combo_index])
+	elif animation_player.has_animation(anim_map[state]):
 		animation_player.play(anim_map[state])
 
 # 空中时间，计算击退方式
@@ -139,7 +146,7 @@ func can_jumpkick() -> bool:
 
 # 监听状态否可跳跃飞踢
 func can_get_hurt() -> bool:
-	return  
+	return [State.IDLE, State.WALK, State.TAKEOFF, State.JUMP, State.LAND, State.HURT].has(state)
 
 # 行动结束，状态重置
 func on_aciton_complete() -> void:
@@ -156,16 +163,18 @@ func on_land_complete() -> void:
 
 # 接收到伤害 amount：收到的害值
 func on_receive_damage(amount: int, direction: Vector2, hit_type:DamageReceiver.HitType) -> void:
-	# 当前生命值计算， clamp限制生命值范围
-	current_health = clamp(current_health - amount, 0, max_health)
-	
-	# 击倒判断
-	if current_health == 0 or hit_type == DamageReceiver.HitType.KNOCKDOWN:
-		state = State.FALL
-		height_speed = knockdown_intensity # 击到弹起高度
-	else:
-		state = State.HURT
-	velocity = direction * knockback_intensity
+	# 什么状态下可以接收到伤害
+	if can_get_hurt():
+		# 当前生命值计算， clamp限制生命值范围
+		current_health = clamp(current_health - amount, 0, max_health)
+		
+		# 击倒判断
+		if current_health == 0 or hit_type == DamageReceiver.HitType.KNOCKDOWN:
+			state = State.FALL
+			height_speed = knockdown_intensity # 击到弹起高度
+		else:
+			state = State.HURT
+		velocity = direction * knockback_intensity
 
 # 发射器 发送伤害，receiver为DamageReceiver类，此类下有一个信号(damage_received)，并过此信号发送伤害值息
 func on_emit_damage(receiver: DamageReceiver) -> void:
@@ -175,3 +184,5 @@ func on_emit_damage(receiver: DamageReceiver) -> void:
 	if state == State.JUMPKICK:
 		hit_type = DamageReceiver.HitType.KNOCKDOWN
 	receiver.damage_received.emit(damage, direction, hit_type)
+	is_last_hit_successful = true
+	

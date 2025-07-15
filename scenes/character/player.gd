@@ -11,6 +11,12 @@ func handle_input() -> void:
 	velocity = direction * speed
 	if can_attack() and Input.is_action_just_pressed('attack'):
 		state = State.ATTACK
+		
+		# 判断攻击否成功, 成功则修改攻击索引动画，同时重置攻击是否成功变量
+		if is_last_hit_successful:
+			attack_combo_index = (attack_combo_index + 1) % anim_attcks.size()
+			is_last_hit_successful = false
+			
 	if can_jump() and Input.is_action_just_pressed('jump'):
 		state = State.TAKEOFF
 	if can_jumpkick() and Input.is_action_just_pressed('attack'):
