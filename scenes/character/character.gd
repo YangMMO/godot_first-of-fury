@@ -7,6 +7,7 @@ const GRAVITY := 600.0
 @export var damage: int # 伤害值
 @export var damage_power: int # 强力攻击伤害值
 @export var duration_grounded: float # 倒地持续时间
+@export var flight_speed: float # 击飞速度
 @export var jump_intensity: int # 跳跃强度
 @export var knockback_intensity : float # 被击退强度
 @export var knockdown_intensity : float # 被击倒强度
@@ -16,12 +17,13 @@ const GRAVITY := 600.0
 # 加载完成后取得节点
 @onready var animation_player := $AnimationPlayer
 @onready var character_sprite := $CharacterSprite
+@onready var collateral_damage_emitter : Area2D = $CollateralDamageEmitter
 @onready var collision_shape := $CollisionShape2D 
 @onready var damage_emitter := $DamageEmitter # Area2D，检测区域
 @onready var damage_receiver := $DamageReceiver
 
 # 定义的状态
-enum State {IDLE, WALK, ATTACK, TAKEOFF, JUMP, LAND, JUMPKICK, HURT, FALL, GROUNDED, DEATH}
+enum State {IDLE, WALK, ATTACK, TAKEOFF, JUMP, LAND, JUMPKICK, HURT, FALL, GROUNDED, DEATH, FLY}
 
 # 攻击状态
 var anim_attcks := ['punch', 'punch_alt', 'kick', 'roundkick']
@@ -38,6 +40,7 @@ var anim_map : Dictionary = {
 	State.FALL: 'fall',
 	State.GROUNDED: 'grounded',
 	State.DEATH: 'grounded',
+	State.FLY: 'fly',
 }
 
 var attack_combo_index := 0 # 连招索引
@@ -53,6 +56,9 @@ func _ready() -> void:
 	# 当检测域有碰撞物体进入时，(area_entered)信号通过链接调用一个方法（on_emit_damage）
 	damage_emitter.area_entered.connect(on_emit_damage.bind())
 	damage_receiver.damage_received.connect(on_receive_damage.bind())
+	# 强力攻击，击飞连续碰撞
+	collateral_damage_emitter.area_entered.connect(on_emit_collateral_damage.bind())
+	collateral_damage_emitter.body_entered.connect(on_wall_hit.bind())
 	current_health = max_health # 初始化生命值
 
 # 进程处理阶段
@@ -65,7 +71,7 @@ func _process(delta: float) -> void:
 	handle_death(delta)
 	fiip_sprites()
 	character_sprite.position = Vector2.UP * height
-	collision_shape.disabled = is_collision_enabled()
+	collision_shape.disabled = is_collision_disabled()
 	move_and_slide()
 
 # 移动事件
@@ -149,8 +155,8 @@ func can_jumpkick() -> bool:
 func can_get_hurt() -> bool:
 	return [State.IDLE, State.WALK, State.TAKEOFF, State.JUMP, State.LAND, State.HURT].has(state)
 
-func is_collision_enabled() -> bool:
-	return [State.GROUNDED, State.DEATH].has(state)
+func is_collision_disabled() -> bool:
+	return [State.GROUNDED, State.DEATH, State.FLY].has(state)
 
 # 行动结束，状态重置
 func on_aciton_complete() -> void:
@@ -172,13 +178,17 @@ func on_receive_damage(amount: int, direction: Vector2, hit_type:DamageReceiver.
 		print(amount)
 		# 当前生命值计算， clamp限制生命值范围
 		current_health = clamp(current_health - amount, 0, max_health)
-		# 击倒判断
+		# 击倒判断 elif 判断否受到强力攻击, 都是算为普通伤害
 		if current_health == 0 or hit_type == DamageReceiver.HitType.KNOCKDOWN:
 			state = State.FALL
 			height_speed = knockdown_intensity # 击到弹起高度
+			velocity = direction * knockback_intensity
+		elif hit_type == DamageReceiver.HitType.POWER:
+			state = State.FLY
+			velocity = direction * flight_speed
 		else:
 			state = State.HURT
-		velocity = direction * knockback_intensity
+			velocity = direction * knockback_intensity
 
 # 发射器 发送伤害，receiver为DamageReceiver类，此类下有一个信号(damage_received)，并过此信号发送伤害值息
 func on_emit_damage(receiver: DamageReceiver) -> void:
@@ -197,4 +207,9 @@ func on_emit_damage(receiver: DamageReceiver) -> void:
 		current_damage = damage_power
 	receiver.damage_received.emit(current_damage, direction, hit_type)
 	is_last_hit_successful = true
-	
+
+# 击飞到墙壁时
+func on_wall_hit(wall: AnimatableBody2D) -> void:
+	state = State.FALL
+	height_speed = knockdown_intensity # 击到弹起高度
+	velocity = -velocity / 2.0

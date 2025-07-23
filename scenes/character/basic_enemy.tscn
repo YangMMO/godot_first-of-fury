@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://bxjq6cq3a1ss2"]
+[gd_scene load_steps=17 format=3 uid="uid://bxjq6cq3a1ss2"]
 
 [ext_resource type="PackedScene" uid="uid://c5ciasetgeqtu" path="res://scenes/character/character.tscn" id="1_a1sj3"]
 [ext_resource type="Texture2D" uid="uid://d03qi7ch1thty" path="res://assets/art/characters/enemy_punk.png" id="2_dx5s7"]
@@ -22,6 +22,30 @@ tracks/0/keys = {
 "update": 1,
 "values": [0]
 }
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("DamageEmitter:monitoring")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("CollateralDamageEmitter:monitoring")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
 
 [sub_resource type="Animation" id="Animation_yx180"]
 resource_name = "fall"
@@ -39,6 +63,18 @@ tracks/0/keys = {
 "transitions": PackedFloat32Array(1),
 "update": 1,
 "values": [51]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("CollateralDamageEmitter:monitoring")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
 }
 
 [sub_resource type="Animation" id="Animation_by7g5"]
@@ -61,8 +97,8 @@ tracks/0/keys = {
 
 [sub_resource type="Animation" id="Animation_vyv1r"]
 resource_name = "hurt"
-length = 0.3
-step = 0.1
+length = 0.15
+step = 0.05
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -70,7 +106,7 @@ tracks/0/path = NodePath("CharacterSprite:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.1, 0.2),
+"times": PackedFloat32Array(0, 0.05, 0.1),
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
 "values": [40, 41, 42]
@@ -82,7 +118,7 @@ tracks/1/path = NodePath(".")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0.3),
+"times": PackedFloat32Array(0.15),
 "transitions": PackedFloat32Array(1),
 "values": [{
 "args": [],
@@ -158,10 +194,41 @@ tracks/0/keys = {
 "values": [10, 11, 12, 13, 14, 15, 16, 17]
 }
 
+[sub_resource type="Animation" id="Animation_rryhy"]
+resource_name = "fly"
+length = 0.1
+loop_mode = 1
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CharacterSprite:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [50]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("CollateralDamageEmitter:monitoring")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_r8ptc"]
 _data = {
 &"RESET": SubResource("Animation_dx5s7"),
 &"fall": SubResource("Animation_yx180"),
+&"fly": SubResource("Animation_rryhy"),
 &"grounded": SubResource("Animation_by7g5"),
 &"hurt": SubResource("Animation_vyv1r"),
 &"idle": SubResource("Animation_a1sj3"),
@@ -175,14 +242,18 @@ size = Vector2(6, 6)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_r8ptc"]
 size = Vector2(10, 10)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vyv1r"]
+size = Vector2(6, 6)
+
 [node name="BasicEnemy" instance=ExtResource("1_a1sj3")]
 collision_layer = 4
 collision_mask = 12
 script = ExtResource("2_r8ptc")
 damage = 2
-duration_grounded = 1.0
+duration_grounded = 1000.0
+flight_speed = 100.0
 jump_intensity = 5
-knockback_intensity = 40.0
+knockback_intensity = 10.0
 knockdown_intensity = 70.0
 max_health = 20
 speed = 25.0
@@ -215,5 +286,13 @@ collision_layer = 32
 position = Vector2(0, -18)
 shape = SubResource("RectangleShape2D_r8ptc")
 
+[node name="CollateralDamageEmitter" parent="." index="6"]
+collision_mask = 160
+
+[node name="CollisionShape2D" parent="CollateralDamageEmitter" index="0"]
+position = Vector2(0, -11)
+shape = SubResource("RectangleShape2D_vyv1r")
+
 [editable path="DamageEmitter"]
 [editable path="DamageReceiver"]
+[editable path="CollateralDamageEmitter"]

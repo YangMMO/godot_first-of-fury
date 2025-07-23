@@ -388,7 +388,7 @@ size = Vector2(8, 8)
 
 [node name="Player" instance=ExtResource("1_vt0b6")]
 collision_layer = 2
-collision_mask = 9
+collision_mask = 137
 script = ExtResource("2_0vjlc")
 can_respawn = true
 damage = 4
@@ -447,3 +447,4 @@ position = Vector2(-16, -4)
 
 [editable path="DamageEmitter"]
 [editable path="DamageReceiver"]
+[editable path="CollateralDamageEmitter"]
