@@ -5,6 +5,7 @@ const GRAVITY := 600.0
 
 @export var can_respawn: bool # 角色是否可以重生
 @export var damage: int # 伤害值
+@export var damage_power: int # 强力攻击伤害值
 @export var duration_grounded: float # 倒地持续时间
 @export var jump_intensity: int # 跳跃强度
 @export var knockback_intensity : float # 被击退强度
@@ -64,7 +65,7 @@ func _process(delta: float) -> void:
 	handle_death(delta)
 	fiip_sprites()
 	character_sprite.position = Vector2.UP * height
-	collision_shape.disabled = state == State.GROUNDED
+	collision_shape.disabled = is_collision_enabled()
 	move_and_slide()
 
 # 移动事件
@@ -148,6 +149,9 @@ func can_jumpkick() -> bool:
 func can_get_hurt() -> bool:
 	return [State.IDLE, State.WALK, State.TAKEOFF, State.JUMP, State.LAND, State.HURT].has(state)
 
+func is_collision_enabled() -> bool:
+	return [State.GROUNDED, State.DEATH].has(state)
+
 # 行动结束，状态重置
 func on_aciton_complete() -> void:
 	state = State.IDLE
@@ -165,9 +169,9 @@ func on_land_complete() -> void:
 func on_receive_damage(amount: int, direction: Vector2, hit_type:DamageReceiver.HitType) -> void:
 	# 什么状态下可以接收到伤害
 	if can_get_hurt():
+		print(amount)
 		# 当前生命值计算， clamp限制生命值范围
 		current_health = clamp(current_health - amount, 0, max_health)
-		
 		# 击倒判断
 		if current_health == 0 or hit_type == DamageReceiver.HitType.KNOCKDOWN:
 			state = State.FALL
@@ -178,11 +182,19 @@ func on_receive_damage(amount: int, direction: Vector2, hit_type:DamageReceiver.
 
 # 发射器 发送伤害，receiver为DamageReceiver类，此类下有一个信号(damage_received)，并过此信号发送伤害值息
 func on_emit_damage(receiver: DamageReceiver) -> void:
+	# 攻击类型记录
 	var hit_type := DamageReceiver.HitType.NORMAL
 	# 三目运算，如果接收器器的位置<全局位置，则代表接收器的位置在左侧
 	var direction := Vector2.LEFT if receiver.global_position.x < global_position.x else Vector2.RIGHT
+	# 攻击伤害
+	var current_damage = damage
+	# 跳踢判断
 	if state == State.JUMPKICK:
 		hit_type = DamageReceiver.HitType.KNOCKDOWN
-	receiver.damage_received.emit(damage, direction, hit_type)
+	# combo攻击断，最后一帧时，变为强力攻击
+	if attack_combo_index == anim_attcks.size() - 1:
+		hit_type = DamageReceiver.HitType.POWER
+		current_damage = damage_power
+	receiver.damage_received.emit(current_damage, direction, hit_type)
 	is_last_hit_successful = true
 	
