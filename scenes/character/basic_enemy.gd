@@ -22,6 +22,13 @@ func handle_input() -> void:
 			else:
 				velocity = direction * speed
 
+# 设置朝向 基类，根据角色重写方法
+func setHeading() -> void:
+	# 判断跟踪的玩家否存在，并根据玩家位置改变面朝玩家方向
+	if player == null:
+		return
+	heading = Vector2.LEFT if position.x > player.position.x else Vector2.RIGHT
+
 # 重写敌人受伤逻辑
 func on_receive_damage(amount: int, direction: Vector2, hit_type: DamageReceiver.HitType) -> void:
 	super.on_receive_damage(amount, direction, hit_type) # 使用父类方法

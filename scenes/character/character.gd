@@ -45,6 +45,7 @@ var anim_map : Dictionary = {
 
 var attack_combo_index := 0 # 连招索引
 var current_health := 0 # 当前生命值
+var heading := Vector2.RIGHT # 面朝方向
 var height := 0.0 # 高度
 var height_speed := 0.0 # 高度速度
 var is_last_hit_successful := false # 最后一击是否成功
@@ -69,6 +70,7 @@ func _process(delta: float) -> void:
 	handle_air_time(delta)
 	handle_grounded()
 	handle_death(delta)
+	setHeading()
 	fiip_sprites()
 	character_sprite.position = Vector2.UP * height
 	collision_shape.disabled = is_collision_disabled()
@@ -126,12 +128,16 @@ func handle_air_time(delta: float) -> void:
 		else:
 			height_speed -= GRAVITY * delta
 
+# 设置朝向 基类，根据角色重写方法
+func setHeading() -> void:
+	pass
+
 # 翻转角色左右
 func fiip_sprites() -> void:
-	if velocity.x > 0:
+	if heading == Vector2.RIGHT:
 		character_sprite.flip_h = false
 		damage_emitter.scale.x = 1
-	elif velocity.x < 0:
+	else:
 		character_sprite.flip_h = true
 		damage_emitter.scale.x = -1
 
@@ -207,6 +213,13 @@ func on_emit_damage(receiver: DamageReceiver) -> void:
 		current_damage = damage_power
 	receiver.damage_received.emit(current_damage, direction, hit_type)
 	is_last_hit_successful = true
+
+# 连续碰撞伤害, 检测伤害接收器不来自damage_receiver
+func on_emit_collateral_damage(receiver: DamageReceiver) -> void:
+	if receiver != damage_receiver:
+		# 重置方向，并发送一个伤害为0的击倒
+		var direction := Vector2.LEFT if receiver.global_position.x < global_position.x else Vector2.RIGHT
+		receiver.damage_received.emit(0, direction, DamageReceiver.HitType.KNOCKDOWN)
 
 # 击飞到墙壁时
 func on_wall_hit(wall: AnimatableBody2D) -> void:

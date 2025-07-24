@@ -24,6 +24,14 @@ func handle_input() -> void:
 	if can_jumpkick() and Input.is_action_just_pressed('attack'):
 		state = State.JUMPKICK
 
+# 设置朝向 基类，根据角色重写方法
+func setHeading() -> void:
+	# 判断X轴改变朝向
+	if velocity.x > 0:
+		heading = Vector2.RIGHT
+	elif velocity.x < 0:
+		heading = Vector2.LEFT
+
 # 接收敌人，并返回槽位
 func reserve_slot(enemy: BasicEnemy) -> EnemySlot:
 	# 检查槽位数组，槽位是否空闲，并返回新的槽位数组	

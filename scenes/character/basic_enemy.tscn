@@ -255,7 +255,7 @@ flight_speed = 100.0
 jump_intensity = 5
 knockback_intensity = 10.0
 knockdown_intensity = 70.0
-max_health = 20
+max_health = 30
 speed = 25.0
 
 [node name="CharacterSprite" parent="." index="1"]
